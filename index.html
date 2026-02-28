@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Arcaea 高難易度表生成ツール</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root { 
+            --ftr-color: #80396a; --etr-color: #89729E; --byd-color: #C2052C; 
+            --accent: #00d4ff;
+        }
+        body { background: #121212; color: #fff; font-family: 'Inter', sans-serif; display: flex; gap: 20px; padding: 20px; margin: 0; }
+        
+        .editor { width: 380px; height: 95vh; overflow-y: auto; background: #1a1a1a; padding: 20px; border-radius: 12px; flex-shrink: 0; }
+        .input-group { margin-bottom: 25px; border-bottom: 1px solid #333; padding-bottom: 15px; }
+        .input-group h4 { margin: 0 0 10px 0; color: #00d4ff; }
+        .input-row { display: flex; align-items: center; margin-bottom: 10px; font-size: 0.85em; border-bottom: 1px solid #222; padding-bottom: 5px; }
+        input { width: 100px; background: #2a2a2a; color: #fff; border: 1px solid #444; padding: 5px; margin-left: auto; border-radius: 4px; }
+
+        #capture-target {
+            width: 1250px; padding: 40px; border-radius: 5px;
+            background: linear-gradient(rgba(10,10,20,0.85), rgba(10,10,20,0.85)), url('images/background.jpg');
+            background-size: cover;
+            position: relative; /* クレジット配置用 */
+        }
+
+        .header {
+            display: flex; justify-content: space-between; align-items: flex-end; 
+            margin-bottom: 30px; border-bottom: 2px solid var(--accent); padding-bottom: 15px;
+        }
+        .player-name { font-size: 3em; font-weight: bold; letter-spacing: 4px; text-shadow: 0 0 10px rgba(0, 212, 255, 0.5); margin-bottom: 5px; }
+        .friend-code { font-size: 1.2em; color: #aaa; letter-spacing: 2px; font-family: monospace; }
+        .overall-pt-box { text-align: right; position: relative; }
+        .overall-pt-label { font-size: 0.9em; color: #ccc; margin-bottom: 5px; }
+        .overall-pt-val { font-size: 2.8em; font-weight: bold; color: #fff; text-shadow: 0 0 15px var(--accent); font-family: monospace; }
+        
+        /* 全体ポテンシャルの星 */
+        .overall-stars { color: #ffeb3b; font-size: 1.2em; text-shadow: 0 0 5px #000; margin-bottom: -5px; }
+
+        .tier-label {
+            font-size: 1.4em; font-weight: bold; color: var(--accent);
+            border-bottom: 1px solid #444; margin: 30px 0 15px 0;
+            padding-bottom: 5px; letter-spacing: 2px;
+        }
+        .tier-label:first-of-type { margin-top: 0; }
+
+        .b30-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 15px; margin-bottom: 40px; }
+
+        .score-card { width: 180px; height: 180px; position: relative; border-radius: 4px; overflow: hidden; background: #000; }
+        .diff-ftr { border: 2px solid var(--ftr-color); }
+        .diff-etr { border: 2px solid var(--etr-color); }
+        .diff-byd { border: 2px solid var(--byd-color); }
+
+        .jacket { width: 100%; height: 100%; object-fit: cover; opacity: 0.5; }
+
+        .rank-badge { position: absolute; top: 0; left: 0; background: rgba(0,0,0,0.7); padding: 2px 8px; font-size: 0.8em; color: #aaa; z-index: 2; }
+        .level-badge { position: absolute; top: 0; right: 0; background: var(--ftr-color); padding: 2px 8px; font-size: 0.8em; font-weight: bold; z-index: 2; }
+        .stars { position: absolute; top: 35px; left: 8px; color: #ffeb3b; font-size: 0.9em; text-shadow: 0 0 5px #000; z-index: 2; }
+
+        .grade-badge { 
+            position: absolute; bottom: 75px; left: 10px; 
+            font-size: 1.6em; font-weight: 900; font-style: italic; color: #fff;
+            text-shadow: 0 0 5px #000, 0 0 10px #00d4ff; z-index: 2;
+        }
+
+        .card-info { position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.8); padding: 8px; box-sizing: border-box; text-align: center; z-index: 3; }
+        .card-title { font-size: 0.65em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #ccc; margin-bottom: 4px; }
+        
+        .card-pt { font-size: 1.6em; font-weight: bold; color: #fff; font-family: monospace; }
+        .pt-rank-1 { color: #ffd700 !important; text-shadow: 0 0 10px rgba(255, 215, 0, 0.8); }
+        .pt-rank-2 { color: #7d7d7d !important; text-shadow: 0 0 10px rgba(125, 125, 125, 0.8); }
+        .pt-rank-3 { color: #cd7f32 !important; text-shadow: 0 0 10px rgba(205, 127, 50, 0.8); }
+
+        .card-score { font-size: 0.7em; color: #00ffcc; margin-top: 2px; }
+
+        /* 製作者クレジット */
+        .creator-credit {
+            position: absolute; bottom: 10px; right: 20px;
+            font-size: 0.8em; color: rgba(255, 255, 255, 0.3);
+            letter-spacing: 1px; font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="editor">
+        <h3>Arcaea Score Editor</h3>
+        
+        <div class="input-group" id="player-info-editor">
+            <h4>Player Info</h4>
+            <div class="input-row">
+                <span>Name</span>
+                <input type="text" id="in-player-name" placeholder="Name" oninput="updatePlayerInfo()">
+            </div>
+            <div class="input-row">
+                <span>Friend Code</span>
+                <input type="text" id="in-friend-code" placeholder="000-000-000" oninput="updatePlayerInfo()">
+            </div>
+            <div class="input-row">
+                <span>Potential</span>
+                <input type="text" id="in-overall-pt" placeholder="-" oninput="updatePlayerInfo()">
+            </div>
+        </div>
+
+        <div id="editor-root"></div>
+        <button onclick="exportImage()" style="width:100%; padding:15px; background:#6e48aa; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; margin-top:10px;">画像を生成して保存</button>
+    </div>
+
+    <div id="capture-target">
+        <div class="header">
+            <div>
+                <div class="player-name" id="display-player-name">Name</div>
+                <div class="friend-code" id="display-friend-code">ID: 000-000-000</div>
+            </div>
+            <div class="overall-pt-box">
+                <div class="overall-pt-label">Generated on: <span id="display-date"></span></div>
+                <div id="display-overall-stars" class="overall-stars"></div>
+                <div style="font-size: 1.2em; font-weight: bold; color: #aaa;">POTENTIAL</div>
+                <div class="overall-pt-val" id="display-overall-pt">-</div>
+            </div>
+        </div>
+        
+        <div id="display-root"></div>
+
+        <div style="margin-top: 20px; font-size: 0.7em; color: rgba(255,255,255,0.4); text-align: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+            ※本ツールは個人によって制作された非公式のファンツールです。<br>
+            使用されている楽曲ジャケット等の知的財産権は、すべて権利者（lowiro / Arcaea）に帰属します。
+        </div>
+
+        <div class="creator-credit">High Difficulty Tracker - Created by Nagi961(X: NoooooB008)</div>
+    </div>
+
+    <script>
+        const config = [
+            { val: "12.0", songs: [{ name: "Testify", diff: "BYD" }] },
+            { val: "11.9", songs: [{ name: "Designant.", diff: "BYD" }] },
+            { val: "11.7", songs: [{ name: "Tempestissimo", diff: "BYD" }] },
+            { val: "11.6", songs: [{ name: "Arcana Eden", diff: "BYD" }] },
+            { val: "11.5", songs: [{ name: "Pentiment", diff: "BYD" }, { name: "Aether Crest: Astral", diff: "ETR" }] },
+            { val: "11.4", songs: [{ name: "Lament Rain", diff: "BYD" }] },
+            { val: "11.3", songs: [{ name: "Abstruse Dilemma", diff: "BYD" }, { name: "Arghena", diff: "FTR" }, { name: "ALTER EGO", diff: "ETR" }, { name: "多次元宇宙融合論", diff: "ETR" }] },
+            { val: "11.2", songs: [{ name: "Aegleseeker", diff: "FTR" }, { name: "PRAGMATISM -RESURRECTION-", diff: "BYD" }, { name: "Vicious [ANTi] Heroism", diff: "ETR" }] },
+            { val: "11.1", songs: [{ name: "#1f1e33", diff: "FTR" }, { name: "Fracture Ray", diff: "FTR" }, { name: "Grievous Lady", diff: "FTR" }, { name: "魔王", diff: "FTR" }] },
+            { val: "11.0", songs: [{ name: "LAMIA", "diff": "FTR" }, { name: "最強STRONGER", "diff": "FTR" }, { name: "Undying Macula", "diff": "ETR" }] }
+        ];
+
+        const tierGroups = [
+            { label: "CONST 11.5 - 12.0", values: ["12.0", "11.9", "11.7", "11.6", "11.5"] },
+            { label: "CONST 11.3 - 11.4", values: ["11.4", "11.3"] },
+            { label: "CONST 11.2", values: ["11.2"] },
+            { label: "CONST 11.1", values: ["11.1"] },
+            { label: "CONST 11.0", values: ["11.0"] }
+        ];
+
+        const savedScores = JSON.parse(localStorage.getItem('arcaeaScores_v3')) || {};
+        
+        const savedPlayerInfo = JSON.parse(localStorage.getItem('arcaeaPlayerInfo_v2')) || {
+            name: "Name", friendCode: "000-000-000", overallPt: "-"
+        };
+
+        document.getElementById('display-date').innerText = new Date().toISOString().slice(0, 10).replace(/-/g, '/');
+
+        function initPlayerInfo() {
+            document.getElementById('in-player-name').value = savedPlayerInfo.name;
+            document.getElementById('in-friend-code').value = savedPlayerInfo.friendCode;
+            document.getElementById('in-overall-pt').value = savedPlayerInfo.overallPt;
+            updatePlayerInfoDisplay();
+        }
+
+        function updatePlayerInfo() {
+            savedPlayerInfo.name = document.getElementById('in-player-name').value || "Name";
+            savedPlayerInfo.friendCode = document.getElementById('in-friend-code').value || "000-000-000";
+            
+            let ptInput = document.getElementById('in-overall-pt').value;
+            let parsedPt = parseFloat(ptInput);
+            savedPlayerInfo.overallPt = !isNaN(parsedPt) ? parsedPt.toFixed(2) : (ptInput || "-");
+
+            localStorage.setItem('arcaeaPlayerInfo_v2', JSON.stringify(savedPlayerInfo));
+            updatePlayerInfoDisplay();
+        }
+
+        function updatePlayerInfoDisplay() {
+            document.getElementById('display-player-name').innerText = savedPlayerInfo.name;
+            document.getElementById('display-friend-code').innerText = `ID: ${savedPlayerInfo.friendCode}`;
+            document.getElementById('display-overall-pt').innerText = savedPlayerInfo.overallPt;
+            
+            // 全体ポテンシャルの星を更新
+            let parsedPt = parseFloat(savedPlayerInfo.overallPt);
+            document.getElementById('display-overall-stars').innerText = !isNaN(parsedPt) ? getStars(parsedPt) : "";
+        }
+
+        function getGrade(score) {
+            if (score === 0) return "-";
+            if (score >= 10000000) return "PM";
+            if (score >= 9900000) return "EX+";
+            if (score >= 9800000) return "EX";
+            if (score >= 9500000) return "AA";
+            if (score >= 9200000) return "A";
+            if (score >= 8900000) return "B";
+            if (score >= 8600000) return "C";
+            return "D";
+        }
+
+        function calcPT(constant, score) {
+            let p = 0;
+            if (score >= 10000000) p = constant + 2.0;
+            else if (score >= 9800000) p = constant + 1.0 + (score - 9800000) / 200000;
+            else p = constant + (score - 9500000) / 300000;
+            return Math.max(0, p);
+        }
+
+        function getStars(pt) {
+            if (pt >= 13.0) return "☆☆☆";
+            if (pt >= 12.5) return "☆☆";
+            if (pt >= 12.0) return "☆";
+            return "";
+        }
+
+        function render() {
+            const displayRoot = document.getElementById('display-root');
+            displayRoot.innerHTML = "";
+            const editorRoot = document.getElementById('editor-root');
+            const isFirstLoad = editorRoot.innerHTML === "";
+
+            let allSongsList = [];
+            config.forEach(c => {
+                c.songs.forEach(s => {
+                    const score = savedScores[s.name] || 0;
+                    allSongsList.push({ name: s.name, pt: calcPT(parseFloat(c.val), score) });
+                });
+            });
+            allSongsList.sort((a, b) => b.pt - a.pt);
+
+            let rankMap = {};
+            allSongsList.forEach((song, index) => { rankMap[song.name] = index + 1; });
+
+            let globalIndex = 1;
+
+            tierGroups.forEach(group => {
+                const label = document.createElement('div');
+                label.className = 'tier-label';
+                label.innerText = group.label;
+                displayRoot.appendChild(label);
+
+                const grid = document.createElement('div');
+                grid.className = 'b30-grid';
+                displayRoot.appendChild(grid);
+
+                config.filter(c => group.values.includes(c.val)).forEach(c => {
+                    c.songs.forEach(s => {
+                        const score = savedScores[s.name] || 0;
+                        const pt = calcPT(parseFloat(c.val), score);
+                        
+                        const songRank = rankMap[s.name];
+                        let ptClass = "card-pt";
+                        if (songRank === 1 && score > 0) ptClass += " pt-rank-1";
+                        else if (songRank === 2 && score > 0) ptClass += " pt-rank-2";
+                        else if (songRank === 3 && score > 0) ptClass += " pt-rank-3";
+                        
+                        const safeName = s.name.replace(/[:\/\\#?%*|"<>]/g, '_');
+                        const card = document.createElement('div');
+                        card.className = `score-card diff-${s.diff.toLowerCase()}`;
+                        card.innerHTML = `
+                            <div class="rank-badge">#${globalIndex++}</div>
+                            <div class="level-badge" style="background:var(--${s.diff.toLowerCase()}-color)">${parseFloat(c.val).toFixed(1)}</div>
+                            <div class="stars">${score > 0 ? getStars(pt) : ""}</div>
+                            <div class="grade-badge">${getGrade(score)}</div>
+                            <img src="images/${safeName}.png" class="jacket" onerror="this.src='https://via.placeholder.com/180?text=No+Img'">
+                            <div class="card-info">
+                                <div class="card-title">${s.name}</div>
+                                <div class="${ptClass}">${pt.toFixed(2)}</div>
+                                <div class="card-score">Score: ${score > 0 ? score.toLocaleString() : '-'}</div>
+                            </div>
+                        `;
+                        grid.appendChild(card);
+
+                        if (isFirstLoad) {
+                            const row = document.createElement('div');
+                            row.className = 'input-row';
+                            row.innerHTML = `<span>${s.name}</span><input type="number" value="${score}" oninput="updateScore('${s.name}', this.value)">`;
+                            editorRoot.appendChild(row);
+                        }
+                    });
+                });
+            });
+        }
+
+        function updateScore(name, val) {
+            savedScores[name] = parseInt(val) || 0;
+            localStorage.setItem('arcaeaScores_v3', JSON.stringify(savedScores));
+            render();
+        }
+
+        function exportImage() {
+            html2canvas(document.getElementById('capture-target'), { backgroundColor: '#0a0a0f', useCORS: true }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `Arcaea_High_Difficulty_${new Date().toISOString().slice(0,10)}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+
+        initPlayerInfo();
+        render();
+    </script>
+</body>
+</html>
