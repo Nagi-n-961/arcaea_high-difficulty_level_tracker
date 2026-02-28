@@ -18,7 +18,6 @@
         input { width: 100px; background: #2a2a2a; color: #fff; border: 1px solid #444; padding: 5px; margin-left: auto; border-radius: 4px; }
 
         #capture-target {
-            /* box-sizing: border-box を追加して、paddingを1250pxの中に含めます */
             box-sizing: border-box; 
             width: 1250px;
             min-width: 1250px; 
@@ -33,10 +32,20 @@
 
         .header {
             display: flex; justify-content: space-between; align-items: flex-end; 
-            margin-bottom: 30px; border-bottom: 2px solid var(--accent); padding-bottom: 15px;
+            margin-bottom: 30px; border-bottom: 2px solid var(--accent); padding-bottom: 10px;
         }
-        .player-name { font-size: 3em; font-weight: bold; letter-spacing: 4px; text-shadow: 0 0 10px rgba(0, 212, 255, 0.5); margin-bottom: 5px; }
-        .friend-code { font-size: 1.2em; color: #aaa; letter-spacing: 2px; font-family: monospace; }
+        .player-name { 
+            font-size: 6em; /* 圧倒的な存在感に拡大 */
+            font-weight: bold; letter-spacing: -3px; line-height: 0.8;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.4); 
+            margin-right: 20px;
+        }
+        .friend-code { 
+            font-size: 1.4em; color: rgba(255, 255, 255, 0.4); 
+            letter-spacing: 4px; font-family: monospace;
+            margin-bottom: 5px; /* 下に揃えるための微調整 */
+        }
+
         .overall-pt-box { text-align: right; position: relative; }
         .overall-pt-label { font-size: 0.9em; color: #ccc; margin-bottom: 5px; }
         .overall-pt-val { font-size: 2.8em; font-weight: bold; color: #fff; text-shadow: 0 0 15px var(--accent); font-family: monospace; }
@@ -65,26 +74,49 @@
         .stars { position: absolute; top: 35px; left: 8px; color: #ffeb3b; font-size: 0.9em; text-shadow: 0 0 5px #000; z-index: 2; }
 
         .grade-badge { 
-            position: absolute; bottom: 75px; left: 10px; 
-            font-size: 1.6em; font-weight: 900; font-style: italic; color: #fff;
-            text-shadow: 0 0 5px #000, 0 0 10px #00d4ff; z-index: 2;
+            position: absolute; 
+            bottom: 85px;
+            left: 0; 
+            font-size: 1.2em;
+            font-weight: 900; font-style: italic; color: #fff;
+            z-index: 2;
+            
+            background: rgba(0, 0, 0, 0.8);
+            padding: 3px 10px; 
+            line-height: 1;
+            
+            border-radius: 0;
+            /* 右側だけに薄いアクセント線 */
+            border-right: 1px solid var(--accent);
         }
 
-        .card-info { position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.8); padding: 8px; box-sizing: border-box; text-align: center; z-index: 3; }
-        .card-title { font-size: 0.65em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #ccc; margin-bottom: 4px; }
-        
+        .card-info { 
+            position: absolute; bottom: 0; width: 100%; 
+            background: rgba(0,0,0,0.8); /* バッジと色を統一 */
+            padding: 8px; box-sizing: border-box; text-align: center; z-index: 3; 
+        }
+
+        .card-title { 
+            font-size: 0.85em; font-weight: bold;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
+            color: #fff; margin-bottom: 4px; 
+        }        
         .card-pt { font-size: 1.6em; font-weight: bold; color: #fff; font-family: monospace; }
         .pt-rank-1 { color: #ffd700 !important; text-shadow: 0 0 10px rgba(255, 215, 0, 0.8); }
         .pt-rank-2 { color: #7d7d7d !important; text-shadow: 0 0 10px rgba(125, 125, 125, 0.8); }
         .pt-rank-3 { color: #cd7f32 !important; text-shadow: 0 0 10px rgba(205, 127, 50, 0.8); }
 
         .card-score { font-size: 0.7em; color: #00ffcc; margin-top: 2px; }
+        .grade-pm {
+            color: #b3f0ff !important;
+            /* PM専用エフェクト */
+            text-shadow: 0 0 8px rgba(179, 240, 255, 0.8), 0 0 15px rgba(0, 212, 255, 0.4) !important;
+        }
 
         /* 製作者クレジット */
         .creator-credit {
-            /* position: absolute; を削除 */
-            margin-top: 20px; /* 免責事項との間に余白を作る */
-            text-align: right; /* 右寄せにする */
+            margin-top: 20px;
+            text-align: right;
             font-size: 0.8em;
             color: rgba(255, 255, 255, 0.3);
             letter-spacing: 1px;
@@ -120,7 +152,7 @@
 
     <div id="capture-target">
         <div class="header">
-            <div>
+            <div style="display: flex; align-items: flex-end;">
                 <div class="player-name" id="display-player-name">Name</div>
                 <div class="friend-code" id="display-friend-code">ID: 000-000-000</div>
             </div>
@@ -131,9 +163,8 @@
                 <div class="overall-pt-val" id="display-overall-pt">-</div>
             </div>
         </div>
-        
         <div id="display-root"></div>
-
+        
         <div style="margin-top: 20px; font-size: 0.7em; color: rgba(255,255,255,0.4); text-align: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
             ※本ツールは個人によって制作された非公式のファンツールです。<br>
             使用されている楽曲ジャケット等の知的財産権は、すべて権利者（lowiro / Arcaea）に帰属します。
@@ -262,7 +293,11 @@
                     c.songs.forEach(s => {
                         const score = savedScores[s.name] || 0;
                         const pt = calcPT(parseFloat(c.val), score);
-                        
+                        const grade = getGrade(score); // グレードを取得
+
+                        // PMの時だけクラスを追加する
+                        const gradeClass = (grade === "PM") ? "grade-pm" : "";
+
                         const songRank = rankMap[s.name];
                         let ptClass = "card-pt";
                         if (songRank === 1 && score > 0) ptClass += " pt-rank-1";
@@ -276,7 +311,9 @@
                             <div class="rank-badge">#${globalIndex++}</div>
                             <div class="level-badge" style="background:var(--${s.diff.toLowerCase()}-color)">${parseFloat(c.val).toFixed(1)}</div>
                             <div class="stars">${score > 0 ? getStars(pt) : ""}</div>
-                            <div class="grade-badge">${getGrade(score)}</div>
+                            
+                            <div class="grade-badge ${gradeClass}">${grade}</div>
+                            
                             <img src="images/${safeName}.png" class="jacket" onerror="this.src='https://via.placeholder.com/180?text=No+Img'">
                             <div class="card-info">
                                 <div class="card-title">${s.name}</div>
@@ -284,6 +321,7 @@
                                 <div class="card-score">Score: ${score > 0 ? score.toLocaleString() : '-'}</div>
                             </div>
                         `;
+
                         grid.appendChild(card);
 
                         if (isFirstLoad) {
@@ -333,4 +371,3 @@
     </script>
 </body>
 </html>
-
