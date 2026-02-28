@@ -18,15 +18,17 @@
         input { width: 100px; background: #2a2a2a; color: #fff; border: 1px solid #444; padding: 5px; margin-left: auto; border-radius: 4px; }
 
         #capture-target {
+            /* box-sizing: border-box を追加して、paddingを1250pxの中に含めます */
+            box-sizing: border-box; 
             width: 1250px;
-            min-width: 1250px;
+            min-width: 1250px; 
             padding: 40px;
             border-radius: 5px;
             background: linear-gradient(rgba(10,10,20,0.6), rgba(10,10,20,0.6)), url('images/background.jpg');
             background-size: cover;
-            /* height: auto; を明示（念のため） */
             height: auto;
-            overflow: hidden; /* 中身がはみ出さないように */
+            overflow: hidden;
+            position: relative;
         }
 
         .header {
@@ -303,19 +305,21 @@
 
         function exportImage() {
             const target = document.getElementById('capture-target');
-            
-            // 現在の要素の正確な高さを取得
             const targetHeight = target.offsetHeight;
 
             html2canvas(target, { 
                 backgroundColor: '#0a0a0f', 
                 useCORS: true,
                 scale: 2,
-                width: 1250,
-                height: targetHeight, // ★ここ！要素の実際の高さだけを指定
+                width: 1250,        // CSSのwidthと一致させる
+                height: targetHeight,
                 windowWidth: 1250,
-                windowHeight: targetHeight, // 仮想ウィンドウの高さも合わせる
-                y: window.scrollY // スクロール位置によるズレを防止
+                windowHeight: targetHeight,
+                /* スクロール位置に関わらず左上からキャプチャを開始する設定 */
+                scrollX: 0,
+                scrollY: 0,
+                x: 0,
+                y: 0
             }).then(canvas => {
                 const link = document.createElement('a');
                 link.download = `Arcaea_High_Difficulty_${new Date().toISOString().slice(0,10)}.png`;
@@ -323,6 +327,7 @@
                 link.click();
             });
         }
+
         initPlayerInfo();
         render();
     </script>
