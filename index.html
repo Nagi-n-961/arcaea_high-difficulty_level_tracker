@@ -9,7 +9,7 @@
             --ftr-color: #80396a; --etr-color: #89729E; --byd-color: #C2052C; 
             --accent: #00d4ff;
         }
-        body { background: #121212; color: #fff; font-family: 'Inter', sans-serif; display: flex; gap: 20px; padding: 20px; margin: 0; }
+        body { background: #121212; color: #fff; font-family: 'Inter', sans-serif; display: flex; gap: 20px; padding: 20px; margin: 0; overflow-x: auto; }
         
         .editor { width: 380px; height: 95vh; overflow-y: auto; background: #1a1a1a; padding: 20px; border-radius: 12px; flex-shrink: 0; }
         .input-group { margin-bottom: 25px; border-bottom: 1px solid #333; padding-bottom: 15px; }
@@ -18,10 +18,13 @@
         input { width: 100px; background: #2a2a2a; color: #fff; border: 1px solid #444; padding: 5px; margin-left: auto; border-radius: 4px; }
 
         #capture-target {
-            width: 1250px; padding: 40px; border-radius: 5px;
-            background: linear-gradient(rgba(10,10,20,0.85), rgba(10,10,20,0.85)), url('images/background.jpg');
+            width: 1250px;
+            min-width: 1250px; /* 横幅を固定してスマホでの崩れを防止 */
+            padding: 40px; border-radius: 5px;
+            /* rgbaの最後の数値を0.85から0.6にして背景を明るく */
+            background: linear-gradient(rgba(10,10,20,0.6), rgba(10,10,20,0.6)), url('images/background.jpg');
             background-size: cover;
-            position: relative; /* クレジット配置用 */
+            position: relative;
         }
 
         .header {
@@ -140,7 +143,7 @@
             { val: "11.4", songs: [{ name: "Lament Rain", diff: "BYD" }] },
             { val: "11.3", songs: [{ name: "Abstruse Dilemma", diff: "BYD" }, { name: "Arghena", diff: "FTR" }, { name: "ALTER EGO", diff: "ETR" }, { name: "多次元宇宙融合論", diff: "ETR" }] },
             { val: "11.2", songs: [{ name: "Aegleseeker", diff: "FTR" }, { name: "PRAGMATISM -RESURRECTION-", diff: "BYD" }, { name: "Vicious [ANTi] Heroism", diff: "ETR" }] },
-            { val: "11.1", songs: [{ name: "#1f1e33", diff: "FTR" }, { name: "Fracture Ray", diff: "FTR" }, { name: "Grievous Lady", diff: "FTR" }, { name: "魔王", diff: "FTR" }] },
+            { val: "11.1", songs: [{ name: "#1f1e33", diff: "FTR" }, { name: "Fracture Ray", diff: "FTR" }, { name: "Grievous Lady", diff: "FTR" }, { name: "魔王", diff: "BYD" }] },
             { val: "11.0", songs: [{ name: "LAMIA", "diff": "FTR" }, { name: "最強STRONGER", "diff": "FTR" }, { name: "Undying Macula", "diff": "ETR" }] }
         ];
 
@@ -292,10 +295,18 @@
         }
 
         function exportImage() {
-            html2canvas(document.getElementById('capture-target'), { backgroundColor: '#0a0a0f', useCORS: true }).then(canvas => {
+            const target = document.getElementById('capture-target');
+            // 保存時の設定を詳細に指定して崩れを防止
+            html2canvas(target, { 
+                backgroundColor: '#0a0a0f', 
+                useCORS: true,
+                scale: 2,         // 高画質化
+                width: 1250,      // キャプチャする幅を固定
+                windowWidth: 1250 // 仮想的なブラウザ幅を固定
+            }).then(canvas => {
                 const link = document.createElement('a');
                 link.download = `Arcaea_High_Difficulty_${new Date().toISOString().slice(0,10)}.png`;
-                link.href = canvas.toDataURL();
+                link.href = canvas.toDataURL('image/png');
                 link.click();
             });
         }
@@ -304,4 +315,5 @@
         render();
     </script>
 </body>
+
 </html>
