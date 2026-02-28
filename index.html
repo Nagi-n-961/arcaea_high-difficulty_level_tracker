@@ -41,7 +41,7 @@
             margin-right: 20px;
         }
         .friend-code { 
-            font-size: 1.4em; color: rgba(255, 255, 255, 0.4); 
+            font-size: 2.3em; color: rgba(255, 255, 255, 0.8); 
             letter-spacing: 4px; font-family: monospace;
             margin-bottom: 5px; /* 下に揃えるための微調整 */
         }
@@ -113,12 +113,21 @@
             text-shadow: 0 0 8px rgba(179, 240, 255, 0.8), 0 0 15px rgba(0, 212, 255, 0.4) !important;
         }
 
+        .card-copyright {
+            font-size: 0.55em;
+            color: rgba(255, 255, 255, 0.8);
+            text-align: right;
+            margin-top: 2px;
+            font-family: sans-serif;
+            min-height: 1em; /* 配置を崩さないための最低限の高さ */
+        }
+
         /* 製作者クレジット */
         .creator-credit {
             margin-top: 20px;
             text-align: right;
             font-size: 0.8em;
-            color: rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 0.5);
             letter-spacing: 1px;
             font-style: italic;
             display: block; /* 確実に1行占有させる */
@@ -165,7 +174,7 @@
         </div>
         <div id="display-root"></div>
         
-        <div style="margin-top: 20px; font-size: 0.7em; color: rgba(255,255,255,0.4); text-align: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+        <div style="margin-top: 20px; font-size: 0.7em; color: rgba(255,255,255,0.6); text-align: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
             ※本ツールは個人によって制作された非公式のファンツールです。<br>
             使用されている楽曲ジャケット等の知的財産権は、すべて権利者（lowiro / Arcaea）に帰属します。
         </div>
@@ -184,7 +193,7 @@
             { val: "11.3", songs: [{ name: "Abstruse Dilemma", diff: "FTR" }, { name: "Arghena", diff: "FTR" }, { name: "ALTER EGO", diff: "ETR" }, { name: "多次元宇宙融合論", diff: "ETR" }] },
             { val: "11.2", songs: [{ name: "Aegleseeker", diff: "FTR" }, { name: "PRAGMATISM -RESURRECTION-", diff: "BYD" }, { name: "Vicious [ANTi] Heroism", diff: "BYD" }] },
             { val: "11.1", songs: [{ name: "#1f1e33", diff: "FTR" }, { name: "Fracture Ray", diff: "FTR" }, { name: "Grievous Lady", diff: "FTR" }, { name: "魔王", diff: "BYD" }] },
-            { val: "11.0", songs: [{ name: "LAMIA", "diff": "FTR" }, { name: "最強STRONGER", "diff": "FTR" }, { name: "Undying Macula", "diff": "ETR" }] }
+            { val: "11.0", songs: [{name: "LAMIA", diff: "FTR", copyright: "©SEGA"}, { name: "最強STRONGER", "diff": "FTR" }, { name: "Undying Macula", "diff": "ETR" }] }
         ];
 
         const tierGroups = [
@@ -293,37 +302,40 @@
                     c.songs.forEach(s => {
                         const score = savedScores[s.name] || 0;
                         const pt = calcPT(parseFloat(c.val), score);
-                        const grade = getGrade(score); // グレードを取得
-
-                        // PMの時だけクラスを追加する
+                        const grade = getGrade(score);
                         const gradeClass = (grade === "PM") ? "grade-pm" : "";
-
                         const songRank = rankMap[s.name];
+
+                        // ポテンシャル順位に応じた色の決定
                         let ptClass = "card-pt";
                         if (songRank === 1 && score > 0) ptClass += " pt-rank-1";
                         else if (songRank === 2 && score > 0) ptClass += " pt-rank-2";
                         else if (songRank === 3 && score > 0) ptClass += " pt-rank-3";
-                        
+
                         const safeName = s.name.replace(/[:\/\\#?%*|"<>]/g, '_');
-                        const card = document.createElement('div');
-                        card.className = `score-card diff-${s.diff.toLowerCase()}`;
-                        card.innerHTML = `
-                            <div class="rank-badge">#${globalIndex++}</div>
-                            <div class="level-badge" style="background:var(--${s.diff.toLowerCase()}-color)">${parseFloat(c.val).toFixed(1)}</div>
-                            <div class="stars">${score > 0 ? getStars(pt) : ""}</div>
-                            
-                            <div class="grade-badge ${gradeClass}">${grade}</div>
-                            
-                            <img src="images/${safeName}.png" class="jacket" onerror="this.src='https://via.placeholder.com/180?text=No+Img'">
-                            <div class="card-info">
-                                <div class="card-title">${s.name}</div>
-                                <div class="${ptClass}">${pt.toFixed(2)}</div>
-                                <div class="card-score">Score: ${score > 0 ? score.toLocaleString() : '-'}</div>
+
+                        // パネル外に著作権表示を置くために、wrapperを作成
+                        const wrapper = document.createElement('div');
+                        wrapper.style.display = "flex";
+                        wrapper.style.flexDirection = "column";
+
+                        wrapper.innerHTML = `
+                            <div class="score-card diff-${s.diff.toLowerCase()}">
+                                <div class="rank-badge">#${globalIndex++}</div>
+                                <div class="level-badge" style="background:var(--${s.diff.toLowerCase()}-color)">${parseFloat(c.val).toFixed(1)}</div>
+                                <div class="stars">${score > 0 ? getStars(pt) : ""}</div>
+                                <div class="grade-badge ${gradeClass}">${grade}</div>
+                                <img src="images/${safeName}.png" class="jacket" onerror="this.src='https://via.placeholder.com/180?text=No+Img'">
+                                <div class="card-info">
+                                    <div class="card-title">${s.name}</div>
+                                    <div class="${ptClass}">${pt.toFixed(2)}</div>
+                                    <div class="card-score">Score: ${score > 0 ? score.toLocaleString() : '-'}</div>
+                                </div>
                             </div>
+                            <div class="card-copyright">${s.copyright || ""}</div>
                         `;
 
-                        grid.appendChild(card);
-
+                        grid.appendChild(wrapper);
                         if (isFirstLoad) {
                             const row = document.createElement('div');
                             row.className = 'input-row';
@@ -371,4 +383,3 @@
     </script>
 </body>
 </html>
-
