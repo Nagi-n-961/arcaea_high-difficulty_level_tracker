@@ -19,12 +19,14 @@
 
         #capture-target {
             width: 1250px;
-            min-width: 1250px; /* 横幅を固定してスマホでの崩れを防止 */
-            padding: 40px; border-radius: 5px;
-            /* rgbaの最後の数値を0.85から0.6にして背景を明るく */
+            min-width: 1250px;
+            padding: 40px;
+            border-radius: 5px;
             background: linear-gradient(rgba(10,10,20,0.6), rgba(10,10,20,0.6)), url('images/background.jpg');
             background-size: cover;
-            position: relative;
+            /* height: auto; を明示（念のため） */
+            height: auto;
+            overflow: hidden; /* 中身がはみ出さないように */
         }
 
         .header {
@@ -78,9 +80,14 @@
 
         /* 製作者クレジット */
         .creator-credit {
-            position: absolute; bottom: 10px; right: 20px;
-            font-size: 0.8em; color: rgba(255, 255, 255, 0.3);
-            letter-spacing: 1px; font-style: italic;
+            /* position: absolute; を削除 */
+            margin-top: 20px; /* 免責事項との間に余白を作る */
+            text-align: right; /* 右寄せにする */
+            font-size: 0.8em;
+            color: rgba(255, 255, 255, 0.3);
+            letter-spacing: 1px;
+            font-style: italic;
+            display: block; /* 確実に1行占有させる */
         }
     </style>
 </head>
@@ -296,13 +303,19 @@
 
         function exportImage() {
             const target = document.getElementById('capture-target');
-            // 保存時の設定を詳細に指定して崩れを防止
+            
+            // 現在の要素の正確な高さを取得
+            const targetHeight = target.offsetHeight;
+
             html2canvas(target, { 
                 backgroundColor: '#0a0a0f', 
                 useCORS: true,
-                scale: 2,         // 高画質化
-                width: 1250,      // キャプチャする幅を固定
-                windowWidth: 1250 // 仮想的なブラウザ幅を固定
+                scale: 2,
+                width: 1250,
+                height: targetHeight, // ★ここ！要素の実際の高さだけを指定
+                windowWidth: 1250,
+                windowHeight: targetHeight, // 仮想ウィンドウの高さも合わせる
+                y: window.scrollY // スクロール位置によるズレを防止
             }).then(canvas => {
                 const link = document.createElement('a');
                 link.download = `Arcaea_High_Difficulty_${new Date().toISOString().slice(0,10)}.png`;
@@ -310,7 +323,6 @@
                 link.click();
             });
         }
-
         initPlayerInfo();
         render();
     </script>
