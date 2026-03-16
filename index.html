@@ -37,10 +37,11 @@
             box-sizing: border-box; 
             width: 1250px;
             min-width: 1250px; 
-            padding: 40px;
+            padding: 30px;
             border-radius: 5px;
             background: linear-gradient(rgba(10,10,20,0.6), rgba(10,10,20,0.6)), url('images/background.png');
             background-size: cover;
+            background-position: center;
             height: auto;
             overflow: hidden;
             position: relative;
@@ -232,7 +233,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 2px solid var(--accent);
+            border-bottom: 2px solid var(--byd-color);
             z-index: 1000;
             backdrop-filter: blur(10px);
         }
@@ -687,46 +688,53 @@
             savedScores[name] = parseInt(val) || 0;
             localStorage.setItem('arcaeaScores_v3', JSON.stringify(savedScores));
             // エディタは作り直さず、プレビューだけを更新する！
-            renderPreview();
+            render();
         }
 
         function exportImage() {
             const target = document.getElementById('capture-target');
-            
-            // 生成中であることがわかるように、ボタンの文字を変えるなどすると親切
-            const btn = document.querySelector('.save-btn');
+            const btn = document.querySelector('.view-section.active .save-btn');
             const originalText = btn.innerText;
             btn.innerText = "生成中...";
             btn.disabled = true;
+            const finalWidth = target.offsetWidth;
 
             html2canvas(target, { 
                 backgroundColor: '#0a0a0f', 
                 useCORS: true,
-                scale: 2,
-                width: 1250,
+                scale: 2, 
+                width: finalWidth,
                 height: target.offsetHeight,
-                scrollX: 0, scrollY: 0, x: 0, y: 0
+                scrollX: 0,
+                scrollY: 0,
+                windowWidth: 1350,
+                height: target.offsetHeight
             }).then(canvas => {
-                const dataUrl = canvas.toDataURL('image/png');
-                
-                // モーダルの画像要素にセット
-                document.getElementById('generated-image').src = dataUrl;
-                
-                // PC用のダウンロードボタンの設定
-                const downloadBtn = document.getElementById('download-link-btn');
-                downloadBtn.onclick = () => {
-                    const link = document.createElement('a');
-                    link.download = `Arcaea_Result_${new Date().toISOString().slice(0,10)}.png`;
-                    link.href = dataUrl;
-                    link.click();
-                };
+                // 3. Data URLではなくBlobとして出力する
+                canvas.toBlob((blob) => {
+                    const blobUrl = URL.createObjectURL(blob);
+                    
+                    // モーダルの画像要素にセット（これで長押しメニューの反応が良くなります）
+                    const imgElement = document.getElementById('generated-image');
+                    imgElement.src = blobUrl;
+                    
+                    // ダウンロードボタンの設定（リンク埋め込み方式）
+                    const downloadBtn = document.getElementById('download-link-btn');
+                    downloadBtn.onclick = () => {
+                        const link = document.createElement('a');
+                        link.href = blobUrl;
+                        link.download = `Arcaea_Result_${new Date().toISOString().slice(0,10)}.png`;
+                        document.body.appendChild(link); // 一時的に埋め込み
+                        link.click();
+                        document.body.removeChild(link); // 終わったら削除
+                    };
 
-                // モーダルを表示
-                document.getElementById('image-modal').style.display = 'flex';
-                
-                // ボタンを元に戻す
-                btn.innerText = originalText;
-                btn.disabled = false;
+                    // モーダルを表示
+                    document.getElementById('image-modal').style.display = 'flex';
+                    
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }, 'image/png');
             });
         }
 
