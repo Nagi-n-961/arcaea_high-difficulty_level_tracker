@@ -3,406 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Arcaea 高難易度表生成ツール</title>
+    <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <style>
-        :root { 
-            --ftr-color: #80396a; --etr-color: #89729E; --byd-color: #C2052C; 
-            --accent: #00d4ff;
-        }
-        body {
-            background: #121212;
-            color: #fff;
-            font-family: 'Inter', sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: stretch;
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            overflow-x: hidden;
-        }
-        .editor {
-            width: 100%;         /* スマホでは広く使う */
-            max-width: 1200px;   /* PCでは広がりすぎないように */
-            padding: 15px;
-            box-sizing: border-box;
-        }
-        .editor h3 { font-size: 1.8rem; margin-bottom: 20px; }
-        .input-group { margin-bottom: 25px; border-bottom: 1px solid #333; padding-bottom: 15px; }
-        .input-group h4 { margin: 0 0 10px 0; color: #00d4ff; font-size: 1.2rem;}
-        .input-row { display: flex; align-items: center; margin-bottom: 10px; font-size: 0.85em; border-bottom: 1px solid #222; padding-bottom: 5px; }
-        input { width: 100px; font-size: 16px; background: #2a2a2a; color: #fff; border: 1px solid #444; padding: 5px; margin-left: auto; border-radius: 4px; }
-
-        #capture-target {
-            box-sizing: border-box; 
-            width: 100%;
-            padding: 30px;
-            border-radius: 5px;
-            background: linear-gradient(rgba(10,10,20,0.6), rgba(10,10,20,0.6)), url('images/background.png');
-            background-size: cover;
-            background-position: center;
-            height: auto;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .header {
-            display: flex; justify-content: space-between; align-items: flex-end; 
-            margin-bottom: 30px; border-bottom: 2px solid var(--accent); padding-bottom: 10px;
-        }
-        .player-name { 
-            font-size: 6em;
-            font-weight: bold; letter-spacing: -3px; line-height: 0.8;
-            text-shadow: 0 0 20px rgba(0, 212, 255, 0.4); 
-            margin-right: 20px;
-        }
-        .friend-code { 
-            font-size: 2.3em; color: rgba(255, 255, 255, 0.8); 
-            letter-spacing: 4px; font-family: monospace;
-            margin-bottom: 5px; /* 下に揃えるための微調整 */
-        }
-
-        .overall-pt-box { text-align: right; position: relative; }
-        .overall-pt-label { font-size: 0.9em; color: #ccc; margin-bottom: 5px; }
-        .overall-pt-val { font-size: 2.8em; font-weight: bold; color: #fff; text-shadow: 0 0 15px var(--accent); font-family: monospace; }
-        
-        /* 全体ポテンシャルの星 */
-        .overall-stars { color: #ffeb3b; font-size: 1.2em; text-shadow: 0 0 5px #000; margin-bottom: -5px; }
-        .tier-accordion {
-            width: 90vw;
-            margin-bottom: 12px;
-            border: 1px solid #333;
-            border-radius: 8px;
-            overflow: hidden;
-            position: relative;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-        .tier-summary {
-            background: #252525;
-            padding: 15px 20px;
-            cursor: pointer;
-            font-weight: bold;
-            color: var(--accent);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 1.1rem;
-        }
-
-        .tier-summary:hover { background: #333; }
-
-        .tier-label {
-            font-size: 1.4em; font-weight: bold; color: var(--accent);
-            border-bottom: 1px solid #444; margin: 30px 0 15px 0;
-            padding-bottom: 5px; letter-spacing: 2px;
-        }
-        .tier-label:first-of-type { margin-top: 0; }
-        .editor-input-row {
-            display: flex;
-            align-items: center;
-            padding: 12px 15px;
-            background: #1a1a1a;
-            border-bottom: 1px solid #222;
-            gap: 15px;
-        }
-
-        .editor-jacket-mini {
-            width: 45px;
-            height: 45px;
-            border-radius: 4px;
-            object-fit: cover;
-            border: 1px solid #444;
-        }
-
-        .song-info-edit {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .song-name-edit {
-            font-size: 1rem;
-            font-weight: bold;
-            color: #fff;
-        }
-
-        .song-diff-edit {
-            font-size: 0.75rem;
-            opacity: 0.7;
-        }
-
-        /* 入力欄を押しやすく */
-        .editor-input-row input {
-            width: 120px;
-            padding: 10px;
-            font-size: 1.1rem;
-            text-align: right;
-        }
-        .song-artist-edit {
-            font-size: 0.8rem;
-            color: #aaa; /* 少しグレーにする */
-            margin-bottom: 2px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis; /* 長すぎる場合は「...」にする */
-            max-width: 250px;
-        }
-
-        .b30-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 15px; margin-bottom: 40px; }
-
-        .score-card { width: 180px; height: 180px; position: relative; border-radius: 4px; overflow: hidden; background: #000; }
-        .diff-ftr { border: 2px solid var(--ftr-color); }
-        .diff-etr { border: 2px solid var(--etr-color); }
-        .diff-byd { border: 2px solid var(--byd-color); }
-
-        .jacket { width: 100%; height: 100%; object-fit: cover; opacity: 0.9; }
-
-        .rank-badge { position: absolute; top: 0; left: 0; background: rgba(0,0,0,0.7); padding: 2px 8px; font-size: 0.8em; color: #aaa; z-index: 2; }
-        .level-badge { position: absolute; top: 0; right: 0; background: var(--ftr-color); padding: 2px 8px; font-size: 0.8em; font-weight: bold; z-index: 2; }
-        .stars { position: absolute; top: 35px; left: 8px; color: #ffeb3b; font-size: 0.9em; text-shadow: 0 0 5px #000; z-index: 2; }
-
-        .grade-badge { 
-            position: absolute; 
-            bottom: 85px;
-            left: 0; 
-            font-size: 1.2em;
-            font-weight: 900; font-style: italic; color: #fff;
-            z-index: 2;
-            
-            background: rgba(0, 0, 0, 0.8);
-            padding: 3px 10px; 
-            line-height: 1;
-            
-            border-radius: 0;
-            /* 右側だけに薄いアクセント線 */
-            border-right: 1px solid var(--accent);
-        }
-
-        .card-info { 
-            position: absolute; bottom: 0; width: 100%; 
-            background: rgba(0,0,0,0.8); /* バッジと色を統一 */
-            padding: 8px; box-sizing: border-box; text-align: center; z-index: 3; 
-        }
-
-        .card-title { 
-            font-size: 0.85em; font-weight: bold;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
-            color: #fff; margin-bottom: 4px; 
-        }        
-        .card-pt { font-size: 1.6em; font-weight: bold; color: #fff; font-family: monospace; }
-        .pt-rank-1 { color: #ffd700 !important; text-shadow: 0 0 10px rgba(255, 215, 0, 0.8); }
-        .pt-rank-2 { color: #7d7d7d !important; text-shadow: 0 0 10px rgba(125, 125, 125, 0.8); }
-        .pt-rank-3 { color: #cd7f32 !important; text-shadow: 0 0 10px rgba(205, 127, 50, 0.8); }
-
-        .card-score { font-size: 0.7em; color: #00ffcc; margin-top: 2px; }
-        .grade-pm {
-            color: #b3f0ff !important;
-            /* PM専用エフェクト */
-            text-shadow: 0 0 8px rgba(179, 240, 255, 0.8), 0 0 15px rgba(0, 212, 255, 0.4) !important;
-        }
-
-        .card-copyright {
-            font-size: 0.80em;
-            color: rgba(255, 255, 255, 0.8);
-            text-align: right;
-            margin-top: 2px;
-            font-family: sans-serif;
-            min-height: 1em; /* 配置を崩さないための最低限の高さ */
-        }
-
-        /* 製作者クレジット */
-        .creator-credit {
-            margin-top: 20px;
-            text-align: right;
-            font-size: 1.0em;
-            color: rgba(255, 255, 255, 0.5);
-            letter-spacing: 1px;
-            font-style: italic;
-            display: block; /* 確実に1行占有させる */
-        }
-
-        /* ヘッダーのスタイリング */
-        .app-header {
-            position: sticky; /* fixedから変更 */
-            top: 0;
-            width: 100%;
-            height: 60px;
-            background: rgba(20, 20, 30, 0.95);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid var(--byd-color);
-            z-index: 1000;
-            backdrop-filter: blur(10px);
-        }
-        .tab-btn {
-            font-size: 1.5em;
-            flex: 1;
-            text-align: center;
-            padding: 14px 0; color: #aaa; cursor: pointer;
-            font-weight: bold; letter-spacing: 2px;
-            transition: all 0.3s; border-bottom: 4px solid transparent;
-        }
-
-        .tab-btn.active {
-            color: var(--accent);
-            border-bottom: 7px solid var(--accent);
-            text-shadow: 0 0 10px var(--accent);
-        }
-
-        /* コンテンツのレイアウト */
-        .content-wrapper {
-            margin-top: 80px;
-            width: 100%;
-            max-width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .view-section { display: none; justify-content: center; width: 100%; }
-        .view-section.active { display: flex; }
-
-        /* エディタを中央寄せ & 幅調整 */
-        .editor { width: 90%; max-width: 600px; height: auto; }
-
-        /* プレビューの下にボタンを置くための調整 */
-        .export-actions {
-            margin: 20px 0 50px; text-align: center;
-        }
-        .save-btn, .close-btn, #download-link-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            
-            /* 横長の6角形にする魔法のコード */
-            clip-path: polygon(25px 0%, calc(100% - 25px) 0%, 100% 50%, calc(100% - 25px) 100%, 25px 100%, 0% 50%);
-            
-            /* サイズを大きくする */
-            padding: 15px 60px !important; 
-            font-size: 1.3rem !important;
-            min-width: 280px;
-            
-            border: none;
-            font-weight: 900;
-            letter-spacing: 2px;
-            transition: all 0.2s;
-            cursor: pointer;
-        }        
-        .save-btn {
-            padding: 15px 40px; background: linear-gradient(135deg, #6e48aa, #9d50bb);
-            color: white; border: none; border-radius: 30px;
-            font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-
-        .site-intro {
-            width: 100%;
-            max-width: 900px;
-            margin-bottom: 20px;
-            padding: 0 10px;
-            text-align: center; /* 中央寄せにするとより「タイトル」らしくなります */
-        }
-        .site-title {
-            text-align: center;
-            margin: 1 auto 10px;
-            font-size: clamp(1.2rem, 5.5vw, 2.7rem); /* スマホで少し小さくなるよう微調整 */
-            color: var(--accent);
-            letter-spacing:1.5px;
-            margin-bottom: 10px;
-            white-space: nowrap; 
-            overflow: visible;
-            text-overflow: ellipsis;
-        }
-        .site-description {
-            font-size: 1.2em;
-            color: #ccc;
-            line-height: 1.4;
-        }
-        .site-footer {
-            width: 100%;
-            font-size: 1.2em;
-            box-sizing: border-box; /* パディングを含めて100%にする */
-            margin-top: 50px;
-            padding: 40px 20px;
-            text-align: center;
-            border-top: 1px solid #333;
-            color: #888;
-        }
-        .x-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--accent);
-            text-decoration: none;
-            font-weight: bold;
-            margin-top: 10px;
-            transition: opacity 0.2s;
-        }
-
-        .x-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.05); /* ほんの少し背景をつける */
-            border-radius: 30%;
-            color: #fff;
-            transition: all 0.3s ease;
-            text-decoration: none;
-        }
-
-        .x-btn:hover {
-            background: var(--accent); /* ホバー時にアクセントカラーに */
-            color: #000;              /* アイコンの色を黒に（視認性アップ） */
-            transform: translateY(-3px); /* 少し上に浮く演出 */
-            box-shadow: 0 5px 15px rgba(0, 212, 255, 0.4);
-        }
-
-        .x-icon {
-            width: 30px;
-            height: 30px;
-            fill: currentColor; /* .x-btn の color が適用される */
-        }
-
-        .capture-hidden-container {
-            position: absolute;
-            left: -9999px;
-            top: 0;
-        }
-
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 96%; height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-            flex-direction: column;
-            padding: 20px;
-        }
-        .modal-content {
-            max-width: 100%;
-            max-height: 80vh;
-            box-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .modal-actions {
-            display: flex;
-            gap: 15px;
-        }
-
-        .close-btn {
-            padding: 10px 30px;
-            background: #444;
-            color: white;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-        }
-    </style>
+    <script src="script.js" defer></script>
 </head>
 <body>
     <header class="top-site-header">
@@ -420,20 +23,21 @@
     <main class="content-wrapper">
         <section id="view-editor" class="view-section">
             <div class="editor">
-                <h3>Arcaea Score Editor</h3>
                 <div class="input-group" id="player-info-editor">
                     <h4>Player Info</h4>
-                    <div class="input-row">
-                        <span>Name</span>
-                        <input type="text" id="in-player-name" placeholder="Name" oninput="updatePlayerInfo()">
-                    </div>
-                    <div class="input-row">
-                        <span>Friend Code</span>
-                        <input type="text" id="in-friend-code" placeholder="000-000-000" oninput="updatePlayerInfo()">
-                    </div>
-                    <div class="input-row">
-                        <span>Potential</span>
-                        <input type="text" id="in-overall-pt" placeholder="-" oninput="updatePlayerInfo()">
+                    <div class="player-info-grid">
+                        <div class="info-card">
+                            <label>Name</label>
+                            <input type="text" id="in-player-name" placeholder="Name" oninput="updatePlayerInfo()">
+                        </div>
+                        <div class="info-card">
+                            <label>Friend Code</label>
+                            <input type="text" inputmode="numeric" id="in-friend-code" placeholder="000-000-000" oninput="updatePlayerInfo()">
+                        </div>
+                        <div class="info-card">
+                            <label>Potential</label>
+                            <input type="text" inputmode="decimal" id="in-overall-pt" placeholder="-" oninput="updatePlayerInfo()">
+                        </div>
                     </div>
                 </div>
                 <div id="editor-root"></div>
@@ -441,10 +45,8 @@
         </section>
 
         <section id="view-preview" class="view-section active">
-            <div style="text-align: center; padding: 40px 20px;">                
-                <button class="save-btn" style="font-size: 1.2em;" onclick="exportImage()">
-                    画像を生成して確認する
-                </button>
+            <div class="preview-action-area">                
+                <button class="save-btn action-generate-btn" onclick="exportImage()">画像を生成して確認する</button>
             </div>
         </section>
     </main>
@@ -452,20 +54,21 @@
     <div class="capture-hidden-container">
         <div id="capture-target">
             <div class="header">
-                <div style="display: flex; align-items: flex-end;">
+                <div class="player-header-info">
                     <div class="player-name" id="display-player-name">Name</div>
                     <div class="friend-code" id="display-friend-code">ID: 000-000-000</div>
                 </div>
                 <div class="overall-pt-box">
                     <div class="overall-pt-label">Generated on: <span id="display-date"></span></div>
                     <div id="display-overall-stars" class="overall-stars"></div>
-                    <div style="font-size: 1.2em; font-weight: bold; color: #aaa;">POTENTIAL</div>
+                    <div class="potential-label">POTENTIAL</div>
                     <div class="overall-pt-val" id="display-overall-pt">-</div>
                 </div>
             </div>
+            
             <div id="display-root"></div>
             
-            <div style="margin-top: 20px; font-size: 1.0em; color: rgba(255,255,255,0.6); text-align: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+            <div class="disclaimer-text">
                 ※本ツールは個人によって制作された非公式のファンツールです。<br>
                 使用されている楽曲ジャケット等の知的財産権は、すべて権利者（lowiro / Arcaea）に帰属します。
             </div>
@@ -474,11 +77,11 @@
     </div>
 
     <div id="image-modal" class="modal-overlay">
-        <p style="margin-bottom: 15px; color: var(--accent);">生成が完了しました！長押しでも保存できます。</p>
+        <p class="modal-text">生成が完了しました！長押しでも保存できます。</p>
         <img id="generated-image" class="modal-content" src="" alt="Generated Result">
         <div class="modal-actions">
             <button class="close-btn" onclick="closeModal()">閉じる</button>
-            <button id="download-link-btn" class="save-btn" style="padding: 10px 30px;">ダウンロード</button>
+            <button id="download-link-btn" class="save-btn action-download-btn">ダウンロード</button>
         </div>
     </div>
 
@@ -490,278 +93,5 @@
             </svg>
         </a>
     </footer>
-    <script>
-        const config = [
-            { val: "12.0", songs: [{ name: "Testify", artist: "void (Mournfinale) feat. 星熊南巫", diff: "BYD" }] },
-            { val: "11.9", songs: [{ name: "Designant.", artist: "Designant", diff: "BYD" }] },
-            { val: "11.7", songs: [{ name: "Tempestissimo", artist: "t+pazolite", diff: "BYD" }] },
-            { val: "11.6", songs: [{ name: "Arcana Eden", artist: "Team Grimoire vs Sakuzyo vs Laur", diff: "BYD" }] },
-            { val: "11.5", songs: [{ name: "Pentiment", artist: "Nothing But Requiem with Museo", diff: "BYD" }, { name: "Aether Crest: Astral", artist: "void (Mournfinale) × 水野健治", diff: "ETR" }] },
-            { val: "11.4", songs: [{ name: "Lament Rain", artist: "Ashrount vs. 打打だいず", diff: "BYD" }] },
-            { val: "11.3", songs: [{ name: "Abstruse Dilemma", artist: "Ashrount vs. 打打だいず", diff: "FTR" }, { name: "Arghena", artist: "Feryquitous vs Laur", diff: "FTR" }, { name: "ALTER EGO", artist: "Yuta Imai vs Qlarabelle", diff: "ETR" }, { name: "多次元宇宙融合論", artist: "TAKIO feat. つぐ", diff: "ETR" }, { name: "Axium Divergence", artist: "ak+q (lowiro)", diff: "BYD" }] },
-            { val: "11.2", songs: [{ name: "Aegleseeker", artist: "Silentroom vs Frums", diff: "FTR" }, { name: "PRAGMATISM -RESURRECTION-", artist: "Laur", diff: "BYD" }, { name: "Vicious [ANTi] Heroism", artist: "Kobaryo", diff: "BYD" }] },
-            { val: "11.1", songs: [{ name: "#1f1e33", artist: "かめりあ (EDP)", diff: "FTR" }, { name: "Fracture Ray", artist: "Sakuzyo", diff: "FTR" }, { name: "Grievous Lady", artist: "Team Grimoire vs Laur", diff: "FTR" }, { name: "魔王", artist: "sasakure.UK × TJ.hangneil", diff: "BYD" }] },
-            { val: "11.0", songs: [{name: "LAMIA", artist: "BlackY", diff: "FTR", copyright: "©SEGA"}, { name: "最強STRONGER", artist: "REDALiCE vs USAO", "diff": "FTR" }, { name: "Undying Macula", artist: "Ashrount", "diff": "ETR" }] }
-        ];
-
-        const tierGroups = [
-            { label: "CONST 11.5 - 12.0", values: ["12.0", "11.9", "11.7", "11.6", "11.5"] },
-            { label: "CONST 11.3 - 11.4", values: ["11.4", "11.3"] },
-            { label: "CONST 11.2", values: ["11.2"] },
-            { label: "CONST 11.1", values: ["11.1"] },
-            { label: "CONST 11.0", values: ["11.0"] }
-        ];
-
-        const savedScores = JSON.parse(localStorage.getItem('arcaeaScores_v3')) || {};
-        
-        const savedPlayerInfo = JSON.parse(localStorage.getItem('arcaeaPlayerInfo_v2')) || {
-            name: "Name", friendCode: "000-000-000", overallPt: "-"
-        };
-
-        document.getElementById('display-date').innerText = new Date().toISOString().slice(0, 10).replace(/-/g, '/');
-
-        function initPlayerInfo() {
-            document.getElementById('in-player-name').value = savedPlayerInfo.name;
-            document.getElementById('in-friend-code').value = savedPlayerInfo.friendCode;
-            document.getElementById('in-overall-pt').value = savedPlayerInfo.overallPt;
-            updatePlayerInfoDisplay();
-        }
-
-        function updatePlayerInfo() {
-            savedPlayerInfo.name = document.getElementById('in-player-name').value || "Name";
-            savedPlayerInfo.friendCode = document.getElementById('in-friend-code').value || "000-000-000";
-            
-            let ptInput = document.getElementById('in-overall-pt').value;
-            let parsedPt = parseFloat(ptInput);
-            savedPlayerInfo.overallPt = !isNaN(parsedPt) ? parsedPt.toFixed(2) : (ptInput || "-");
-
-            localStorage.setItem('arcaeaPlayerInfo_v2', JSON.stringify(savedPlayerInfo));
-            updatePlayerInfoDisplay();
-        }
-
-        function updatePlayerInfoDisplay() {
-            document.getElementById('display-player-name').innerText = savedPlayerInfo.name;
-            document.getElementById('display-friend-code').innerText = `ID: ${savedPlayerInfo.friendCode}`;
-            document.getElementById('display-overall-pt').innerText = savedPlayerInfo.overallPt;
-            
-            // 全体ポテンシャルの星を更新
-            let parsedPt = parseFloat(savedPlayerInfo.overallPt);
-            document.getElementById('display-overall-stars').innerText = !isNaN(parsedPt) ? getStars(parsedPt) : "";
-        }
-
-        function getGrade(score) {
-            if (score === 0) return "-";
-            if (score >= 10000000) return "PM";
-            if (score >= 9900000) return "EX+";
-            if (score >= 9800000) return "EX";
-            if (score >= 9500000) return "AA";
-            if (score >= 9200000) return "A";
-            if (score >= 8900000) return "B";
-            if (score >= 8600000) return "C";
-            return "D";
-        }
-
-        function calcPT(constant, score) {
-            let p = 0;
-            if (score >= 10000000) p = constant + 2.0;
-            else if (score >= 9800000) p = constant + 1.0 + (score - 9800000) / 200000;
-            else p = constant + (score - 9500000) / 300000;
-            return Math.max(0, p);
-        }
-
-        function getStars(pt) {
-            if (pt >= 13.0) return "☆☆☆";
-            if (pt >= 12.5) return "☆☆";
-            if (pt >= 12.0) return "☆";
-            return "";
-        }
-        function initEditor() {
-            const editorRoot = document.getElementById('editor-root');
-            editorRoot.innerHTML = "";
-
-            tierGroups.forEach(group => {
-                const accordion = document.createElement('details');
-                accordion.className = 'tier-accordion';
-                if(group.label.includes("11.5")) accordion.open = true;
-
-                accordion.innerHTML = `<summary class="tier-summary">${group.label} <span>▼</span></summary>`;
-                const contentDiv = document.createElement('div');
-
-                config.filter(c => group.values.includes(c.val)).forEach(c => {
-                    c.songs.forEach(s => {
-                        const score = savedScores[s.name] || 0;
-                        const safeName = s.name.replace(/[:\/\\#?%*|"<>]/g, '_');
-
-                        const editRow = document.createElement('div');
-                        editRow.className = 'editor-input-row';
-                        editRow.style.borderLeft = `6px solid var(--${s.diff.toLowerCase()}-color)`;
-                        
-                        editRow.innerHTML = `
-                            <img src="images/${safeName}.png" class="editor-jacket-mini" onerror="this.src='https://via.placeholder.com/50?text=No+Img'">
-                            <div class="song-info-edit">
-                                <span class="song-name-edit">${s.name}</span>
-                                <span class="song-artist-edit">${s.artist || "Unknown Artist"}</span>
-                                <span class="song-diff-edit">${s.diff} / CONST ${c.val}</span>
-                            </div>
-                            <input type="number" 
-                                value="${score === 0 ? '' : score}" 
-                                placeholder="0"
-                                oninput="updateScore('${s.name}', this.value)">
-                        `;
-                        contentDiv.appendChild(editRow);
-                    });
-                });
-                accordion.appendChild(contentDiv);
-                editorRoot.appendChild(accordion);
-            });
-        }
-        function render() {
-            const displayRoot = document.getElementById('display-root');
-            displayRoot.innerHTML = "";
-
-            // ランキング計算
-            let allSongsList = [];
-            config.forEach(c => {
-                c.songs.forEach(s => {
-                    const score = savedScores[s.name] || 0;
-                    allSongsList.push({ name: s.name, pt: calcPT(parseFloat(c.val), score) });
-                });
-            });
-            allSongsList.sort((a, b) => b.pt - a.pt);
-            let rankMap = {};
-            allSongsList.forEach((song, index) => { rankMap[song.name] = index + 1; });
-
-            let globalIndex = 1;
-
-            tierGroups.forEach(group => {
-                const label = document.createElement('div');
-                label.className = 'tier-label';
-                label.innerText = group.label;
-                displayRoot.appendChild(label);
-
-                const grid = document.createElement('div');
-                grid.className = 'b30-grid';
-                displayRoot.appendChild(grid);
-
-                config.filter(c => group.values.includes(c.val)).forEach(c => {
-                    c.songs.forEach(s => {
-                        const score = savedScores[s.name] || 0;
-                        const pt = calcPT(parseFloat(c.val), score);
-                        const grade = getGrade(score);
-                        const songRank = rankMap[s.name];
-                        const safeName = s.name.replace(/[:\/\\#?%*|"<>]/g, '_');
-
-                        // --- プレビューカードの作成 ---
-                        const wrapper = document.createElement('div');
-                        wrapper.style.display = "flex";
-                        wrapper.style.flexDirection = "column";
-
-                        let ptClass = "card-pt";
-                        if (songRank === 1 && score > 0) ptClass += " pt-rank-1";
-                        else if (songRank === 2 && score > 0) ptClass += " pt-rank-2";
-                        else if (songRank === 3 && score > 0) ptClass += " pt-rank-3";
-
-                        wrapper.innerHTML = `
-                            <div class="score-card diff-${s.diff.toLowerCase()}">
-                                <div class="rank-badge">#${globalIndex++}</div>
-                                <div class="level-badge" style="background:var(--${s.diff.toLowerCase()}-color)">${parseFloat(c.val).toFixed(1)}</div>
-                                <div class="stars">${score > 0 ? getStars(pt) : ""}</div>
-                                <div class="grade-badge ${(grade === "PM") ? "grade-pm" : ""}">${grade}</div>
-                                <img src="images/${safeName}.png" class="jacket" onerror="this.src='https://via.placeholder.com/180?text=No+Img'">
-                                <div class="card-info">
-                                    <div class="card-title">${s.name}</div>
-                                    <div class="${ptClass}">${pt.toFixed(2)}</div>
-                                    <div class="card-score">Score: ${score > 0 ? score.toLocaleString() : '-'}</div>
-                                </div>
-                            </div>
-                            <div class="card-copyright">${s.copyright || ""}</div>
-                        `;
-                        grid.appendChild(wrapper);
-
-                    });
-                });
-            });
-        }
-
-        function updateScore(name, val) {
-            savedScores[name] = parseInt(val) || 0;
-            localStorage.setItem('arcaeaScores_v3', JSON.stringify(savedScores));
-            // エディタは作り直さず、プレビューだけを更新する！
-            render();
-        }
-
-        function exportImage() {
-            const target = document.getElementById('capture-target');
-            const btn = document.querySelector('.view-section.active .save-btn');
-            const originalText = btn.innerText;
-            btn.innerText = "生成中...";
-            btn.disabled = true;
-            const finalWidth = target.offsetWidth;
-
-            html2canvas(target, { 
-                backgroundColor: '#0a0a0f', 
-                useCORS: true,
-                scale: 2, 
-                width: finalWidth,
-                height: target.offsetHeight,
-                scrollX: 0,
-                scrollY: 0,
-                windowWidth: 1350,
-                height: target.offsetHeight
-            }).then(canvas => {
-                // 3. Data URLではなくBlobとして出力する
-                canvas.toBlob((blob) => {
-                    const blobUrl = URL.createObjectURL(blob);
-                    
-                    // モーダルの画像要素にセット（これで長押しメニューの反応が良くなります）
-                    const imgElement = document.getElementById('generated-image');
-                    imgElement.src = blobUrl;
-                    
-                    // ダウンロードボタンの設定（リンク埋め込み方式）
-                    const downloadBtn = document.getElementById('download-link-btn');
-                    downloadBtn.onclick = () => {
-                        const link = document.createElement('a');
-                        link.href = blobUrl;
-                        link.download = `Arcaea_Result_${new Date().toISOString().slice(0,10)}.png`;
-                        document.body.appendChild(link); // 一時的に埋め込み
-                        link.click();
-                        document.body.removeChild(link); // 終わったら削除
-                    };
-
-                    // モーダルを表示
-                    document.getElementById('image-modal').style.display = 'flex';
-                    
-                    btn.innerText = originalText;
-                    btn.disabled = false;
-                }, 'image/png');
-            });
-        }
-
-        function closeModal() {
-            document.getElementById('image-modal').style.display = 'none';
-        }
-        function switchTab(tabName) {
-            // ボタンのactiveクラスを切り替え
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-                if(btn.innerText.toLowerCase().includes(tabName)) btn.classList.add('active');
-            });
-
-            // セクションの表示切り替え
-            document.querySelectorAll('.view-section').forEach(sec => {
-                sec.classList.remove('active');
-            });
-            
-            if (tabName === 'editor') {
-                document.getElementById('view-editor').classList.add('active');
-            } else {
-                document.getElementById('view-preview').classList.add('active');
-            }
-        }
-
-        initPlayerInfo();
-        initEditor();
-        render();
-    </script>
 </body>
 </html>
